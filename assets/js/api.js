@@ -724,6 +724,39 @@ async function gerenciarPlano(requestId, acao, motivoRejeicao = '') {
     }
 }
 
+/**
+ * Excluir conta do usuário (PCD ou Empresa)
+ * @returns {Promise} Promise com resultado da exclusão
+ */
+async function excluirConta() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/excluir_conta.php`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Erro HTTP ao excluir conta:', response.status, errorText);
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (e) {
+                errorData = { error: errorText || `Erro ${response.status}` };
+            }
+            return { success: false, error: errorData.error || 'Erro ao excluir conta' };
+        }
+        
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Erro ao excluir conta:', error);
+        return { success: false, error: 'Erro ao processar solicitação: ' + error.message };
+    }
+}
+
 // Exportar funções para uso global
 window.ViggedAPI = {
     buscarVagas,
@@ -756,6 +789,7 @@ window.ViggedAPI = {
     atualizarPerfilPCD,
     atualizarPerfilEmpresa,
     solicitarRecuperacaoSenha,
-    resetarSenha
+    resetarSenha,
+    excluirConta
 };
 

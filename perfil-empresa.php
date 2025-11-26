@@ -22,8 +22,8 @@ unset($_SESSION['perfil_errors'], $_SESSION['perfil_success']);
 
     <div class="max-w-7xl mx-auto px-4 py-8">
         <!-- Company Header -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            <div class="h-32 bg-gradient-to-r from-purple-600 to-purple-400"></div>
+        <div class="bg-white rounded-lg shadow-md mb-6 relative">
+            <div class="h-32 bg-gradient-to-r from-purple-600 to-purple-400 rounded-t-lg"></div>
             <div class="px-6 pb-6">
                 <div class="flex flex-col md:flex-row md:items-end md:justify-between">
                     <div class="flex items-end space-x-4">
@@ -49,6 +49,29 @@ unset($_SESSION['perfil_errors'], $_SESSION['perfil_success']);
                         <button onclick="openJobModal()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
                             <i class="fas fa-plus mr-2"></i>Publicar Vaga
                         </button>
+                        
+                        <!-- Configurações da Conta -->
+                        <div class="relative z-50">
+                            <button onclick="toggleAccountSettings()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center">
+                                <i class="fas fa-cog mr-2"></i>Configurações
+                                <i class="fas fa-chevron-down ml-2 text-xs" id="settingsChevron"></i>
+                            </button>
+                            <div id="accountSettingsMenu" class="hidden absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden min-w-[200px]">
+                                <button onclick="openChangePasswordModal()" class="w-full text-left px-4 py-3 hover:bg-gray-50 transition flex items-center text-gray-700">
+                                    <i class="fas fa-key mr-3 text-purple-600"></i>
+                                    Trocar Senha
+                                </button>
+                                <button onclick="openChangeEmailModal()" class="w-full text-left px-4 py-3 hover:bg-gray-50 transition flex items-center text-gray-700">
+                                    <i class="fas fa-envelope mr-3 text-purple-600"></i>
+                                    Trocar Email
+                                </button>
+                                <div class="border-t border-gray-200"></div>
+                                <button onclick="openDeleteAccountModal(); toggleAccountSettings();" class="w-full text-left px-4 py-3 hover:bg-red-50 transition flex items-center text-red-600">
+                                    <i class="fas fa-trash-alt mr-3"></i>
+                                    Excluir Conta
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -516,6 +539,66 @@ unset($_SESSION['perfil_errors'], $_SESSION['perfil_success']);
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div id="deleteAccountModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-red-600">Excluir Conta</h3>
+                    <button onclick="closeDeleteAccountModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                        <p class="text-sm text-red-800 font-semibold mb-2">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Atenção: Esta ação é irreversível!
+                        </p>
+                        <p class="text-sm text-red-700">
+                            Ao excluir sua conta, todos os seus dados serão permanentemente removidos, incluindo:
+                        </p>
+                        <ul class="list-disc list-inside text-sm text-red-700 mt-2 space-y-1">
+                            <li>Seu perfil completo</li>
+                            <li>Todas as suas vagas publicadas</li>
+                            <li>Todas as candidaturas recebidas</li>
+                            <li>Seus arquivos (logo, documentos)</li>
+                            <li>Histórico de atividades</li>
+                        </ul>
+                    </div>
+                    
+                    <p class="text-sm text-gray-700 mb-4">
+                        Para confirmar a exclusão, digite <strong class="text-red-600">EXCLUIR</strong> no campo abaixo:
+                    </p>
+                    
+                    <input 
+                        type="text" 
+                        id="confirmDeleteInput" 
+                        placeholder="Digite EXCLUIR para confirmar"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-600 focus:border-transparent"
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button 
+                        onclick="closeDeleteAccountModal()" 
+                        class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        id="confirmDeleteButton"
+                        onclick="confirmDeleteAccount()" 
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                    >
+                        <i class="fas fa-trash-alt mr-2"></i>Excluir Conta
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1524,5 +1607,80 @@ include 'includes/footer.php';
             setTimeout(() => {
                 loadCompanyData();
             }, 100);
+        }
+        
+        // Funções para menu de configurações
+        function toggleAccountSettings() {
+            const menu = document.getElementById('accountSettingsMenu');
+            const chevron = document.getElementById('settingsChevron');
+            menu.classList.toggle('hidden');
+            chevron.classList.toggle('fa-chevron-down');
+            chevron.classList.toggle('fa-chevron-up');
+        }
+        
+        // Fechar menu ao clicar fora
+        document.addEventListener('click', function(event) {
+            const settingsButton = event.target.closest('[onclick="toggleAccountSettings()"]');
+            const settingsMenu = document.getElementById('accountSettingsMenu');
+            if (settingsMenu && !settingsButton && !settingsMenu.contains(event.target)) {
+                settingsMenu.classList.add('hidden');
+                const chevron = document.getElementById('settingsChevron');
+                if (chevron) {
+                    chevron.classList.remove('fa-chevron-up');
+                    chevron.classList.add('fa-chevron-down');
+                }
+            }
+        });
+        
+        // Funções para modais de configurações
+        function openChangePasswordModal() {
+            alert('Funcionalidade de trocar senha será implementada em breve.');
+            toggleAccountSettings();
+        }
+        
+        function openChangeEmailModal() {
+            alert('Funcionalidade de trocar email será implementada em breve.');
+            toggleAccountSettings();
+        }
+        
+        // Funções para excluir conta
+        function openDeleteAccountModal() {
+            document.getElementById('deleteAccountModal').classList.remove('hidden');
+        }
+        
+        function closeDeleteAccountModal() {
+            document.getElementById('deleteAccountModal').classList.add('hidden');
+            document.getElementById('confirmDeleteInput').value = '';
+        }
+        
+        async function confirmDeleteAccount() {
+            const confirmInput = document.getElementById('confirmDeleteInput');
+            if (confirmInput.value.toLowerCase() !== 'excluir') {
+                alert('Por favor, digite "EXCLUIR" para confirmar a exclusão da conta.');
+                return;
+            }
+            
+            const deleteButton = document.getElementById('confirmDeleteButton');
+            const originalText = deleteButton.innerHTML;
+            deleteButton.disabled = true;
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Excluindo...';
+            
+            try {
+                const result = await ViggedAPI.excluirConta();
+                
+                if (result.success) {
+                    alert('Sua conta foi excluída com sucesso. Você será redirecionado para a página inicial.');
+                    window.location.href = 'index.php';
+                } else {
+                    alert('Erro ao excluir conta: ' + (result.error || 'Erro desconhecido'));
+                    deleteButton.disabled = false;
+                    deleteButton.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('Erro ao excluir conta:', error);
+                alert('Erro ao excluir conta. Tente novamente mais tarde.');
+                deleteButton.disabled = false;
+                deleteButton.innerHTML = originalText;
+            }
         }
     </script>
