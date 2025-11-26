@@ -53,6 +53,23 @@ include 'includes/nav.php';
         </div>
     </section>
 
+    <!-- Modal de Perfil da Empresa -->
+    <div id="companyProfileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-900">Perfil da Empresa</h3>
+                    <button onclick="closeCompanyProfileModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="companyProfileContent">
+                    <!-- Conteúdo será carregado aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Accessibility Features -->
     <section class="py-16 bg-white">
         <div class="max-w-7xl mx-auto px-6">
@@ -329,9 +346,186 @@ include 'includes/footer.php';
             }).join('');
         }
         
-        function viewCompanyJobs(companyId) {
-            // Redirecionar para página de vagas com filtro de empresa
-            window.location.href = `vagas.php?empresa=${companyId}`;
+        async function viewCompanyJobs(companyId) {
+            // Abrir modal com perfil da empresa
+            await openCompanyProfileModal(companyId);
+        }
+        
+        async function openCompanyProfileModal(companyId) {
+            const modal = document.getElementById('companyProfileModal');
+            const modalContent = document.getElementById('companyProfileContent');
+            
+            // Mostrar loading
+            modal.classList.remove('hidden');
+            modalContent.innerHTML = `
+                <div class="flex items-center justify-center py-12">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                    <p class="ml-4 text-gray-600">Carregando informações da empresa...</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`api/perfil_empresa_publico.php?id=${companyId}`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    displayCompanyProfile(result.data);
+                } else {
+                    modalContent.innerHTML = `
+                        <div class="text-center py-12">
+                            <i class="fas fa-exclamation-circle text-red-500 text-4xl mb-4"></i>
+                            <p class="text-red-600 font-medium">${result.error || 'Erro ao carregar dados da empresa'}</p>
+                            <button onclick="closeCompanyProfileModal()" class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                                Fechar
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar perfil da empresa:', error);
+                modalContent.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-exclamation-circle text-red-500 text-4xl mb-4"></i>
+                        <p class="text-red-600 font-medium">Erro ao carregar dados da empresa</p>
+                        <button onclick="closeCompanyProfileModal()" class="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                            Fechar
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayCompanyProfile(empresa) {
+            const modalContent = document.getElementById('companyProfileContent');
+            const placeholderSvg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgZmlsbD0iI2U3ZTllYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Mb2dvPC90ZXh0Pjwvc3ZnPg==';
+            const logoUrl = empresa.logo || placeholderSvg;
+            
+            let vagasHtml = '';
+            if (empresa.vagas_recentes && empresa.vagas_recentes.length > 0) {
+                vagasHtml = empresa.vagas_recentes.map(vaga => {
+                    const date = new Date(vaga.created_at);
+                    const dateStr = date.toLocaleDateString('pt-BR');
+                    return `
+                        <div class="border-l-4 border-purple-500 pl-4 py-2 hover:bg-gray-50 transition">
+                            <h4 class="font-semibold text-gray-900">${vaga.titulo || 'Sem título'}</h4>
+                            <div class="flex flex-wrap gap-2 mt-1 text-sm text-gray-600">
+                                ${vaga.localizacao ? `<span><i class="fas fa-map-marker-alt mr-1"></i>${vaga.localizacao}</span>` : ''}
+                                ${vaga.tipo_contrato ? `<span><i class="fas fa-briefcase mr-1"></i>${vaga.tipo_contrato}</span>` : ''}
+                                ${vaga.faixa_salarial ? `<span><i class="fas fa-dollar-sign mr-1"></i>${vaga.faixa_salarial}</span>` : ''}
+                                <span><i class="fas fa-calendar mr-1"></i>${dateStr}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                vagasHtml = '<p class="text-gray-500 text-sm">Nenhuma vaga ativa no momento.</p>';
+            }
+            
+            modalContent.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Header da Empresa -->
+                    <div class="flex items-start space-x-6">
+                        <div class="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-purple-100 flex-shrink-0">
+                            ${empresa.logo ? 
+                                `<img src="${logoUrl}" alt="${empresa.nome}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                                 <div class="w-full h-full items-center justify-center hidden" style="display: none;">
+                                    <i class="fas fa-building text-purple-600 text-4xl"></i>
+                                 </div>` :
+                                `<i class="fas fa-building text-purple-600 text-4xl"></i>`
+                            }
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">${empresa.nome}</h2>
+                            <p class="text-purple-600 font-medium mb-2">${empresa.setor}</p>
+                            ${empresa.endereco_completo ? 
+                                `<p class="text-sm text-gray-600 mb-1">
+                                    <i class="fas fa-map-marker-alt mr-2"></i>${empresa.endereco_completo}
+                                </p>` : ''
+                            }
+                            ${empresa.website ? 
+                                `<a href="${empresa.website}" target="_blank" class="text-sm text-purple-600 hover:text-purple-700">
+                                    <i class="fas fa-globe mr-1"></i>${empresa.website}
+                                </a>` : ''
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- Estatísticas -->
+                    <div class="grid grid-cols-3 gap-4 pt-4 border-t">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-purple-600">${empresa.vagas_ativas}</p>
+                            <p class="text-sm text-gray-600">Vagas Ativas</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-purple-600">${empresa.total_vagas}</p>
+                            <p class="text-sm text-gray-600">Total de Vagas</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-purple-600">${empresa.total_candidaturas}</p>
+                            <p class="text-sm text-gray-600">Candidaturas</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Sobre a Empresa -->
+                    ${empresa.descricao ? 
+                        `<div class="pt-4 border-t">
+                            <h3 class="text-lg font-bold text-gray-900 mb-3">Sobre a Empresa</h3>
+                            <p class="text-gray-700 text-sm leading-relaxed">${empresa.descricao}</p>
+                        </div>` : ''
+                    }
+                    
+                    <!-- Política de Inclusão -->
+                    ${empresa.politica_inclusao ? 
+                        `<div class="pt-4 border-t">
+                            <h3 class="text-lg font-bold text-gray-900 mb-3">
+                                <i class="fas fa-heart text-purple-600 mr-2"></i>Política de Inclusão
+                            </h3>
+                            <p class="text-gray-700 text-sm leading-relaxed">${empresa.politica_inclusao}</p>
+                        </div>` : ''
+                    }
+                    
+                    ${empresa.ja_contrata_pcd ? 
+                        `<div class="pt-4 border-t">
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-600 text-xl mr-3"></i>
+                                    <div>
+                                        <p class="font-semibold text-green-900">Empresa que já contrata PCD</p>
+                                        <p class="text-sm text-green-700">Esta empresa já possui experiência em contratação de pessoas com deficiência.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>` : ''
+                    }
+                    
+                    <!-- Vagas Recentes -->
+                    <div class="pt-4 border-t">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-900">Vagas Ativas</h3>
+                            <button onclick="window.location.href='vagas.php?empresa=${empresa.id}'" class="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                                Ver todas <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-2 max-h-64 overflow-y-auto">
+                            ${vagasHtml}
+                        </div>
+                    </div>
+                    
+                    <!-- Botões de Ação -->
+                    <div class="pt-4 border-t flex space-x-3">
+                        <button onclick="window.location.href='vagas.php?empresa=${empresa.id}'" class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition font-semibold">
+                            <i class="fas fa-briefcase mr-2"></i>Ver Todas as Vagas
+                        </button>
+                        <button onclick="closeCompanyProfileModal()" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function closeCompanyProfileModal() {
+            document.getElementById('companyProfileModal').classList.add('hidden');
         }
         
         // Se houver empresaId na URL, mostrar botão para limpar filtro
@@ -349,6 +543,23 @@ include 'includes/footer.php';
                 }
             });
         }
+
+        // Fechar modal de perfil da empresa ao clicar fora
+        document.getElementById('companyProfileModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCompanyProfileModal();
+            }
+        });
+        
+        // Fechar modal com ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('companyProfileModal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeCompanyProfileModal();
+                }
+            }
+        });
 
         // Permitir busca ao pressionar Enter
         document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
