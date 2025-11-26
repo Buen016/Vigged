@@ -520,11 +520,6 @@ unset($_SESSION['perfil_errors'], $_SESSION['perfil_success']);
         </div>
     </div>
 
-<?php
-// Incluir footer escuro (para páginas de perfil)
-$footerStyle = 'dark';
-include 'includes/footer.php';
-?>
 
     <script src="assets/js/api.js"></script>
     <script>
