@@ -37,11 +37,31 @@ async function buscarVagas(filters = {}) {
 async function obterDadosEmpresa() {
     try {
         const response = await fetch(`${API_BASE_URL}/dados_empresa.php`);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Erro HTTP ao obter dados da empresa:', response.status, errorText);
+            return { success: false, error: `Erro ${response.status}: ${errorText.substring(0, 100)}` };
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Resposta não é JSON:', text.substring(0, 200));
+            return { success: false, error: 'Resposta inválida do servidor' };
+        }
+        
         const data = await response.json();
+        
+        if (!data || typeof data !== 'object') {
+            console.error('Dados inválidos recebidos:', data);
+            return { success: false, error: 'Dados inválidos recebidos' };
+        }
+        
         return data;
     } catch (error) {
         console.error('Erro ao obter dados da empresa:', error);
-        return { success: false, error: 'Erro ao carregar dados' };
+        return { success: false, error: 'Erro ao carregar dados: ' + error.message };
     }
 }
 
@@ -52,18 +72,35 @@ async function obterDadosEmpresa() {
  */
 async function obterVagasEmpresa(status = 'ativa') {
     try {
-        const response = await fetch(`${API_BASE_URL}/vagas_empresa.php?status=${status}`);
+        const url = `${API_BASE_URL}/vagas_empresa.php?status=${status}`;
+        console.log('Buscando vagas da empresa:', url);
+        
+        const response = await fetch(url);
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Erro HTTP:', response.status, errorText);
+            console.error('Erro HTTP ao obter vagas:', response.status, errorText);
             return { success: false, error: `Erro ${response.status}: ${errorText.substring(0, 100)}` };
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Resposta não é JSON:', text.substring(0, 200));
+            return { success: false, error: 'Resposta inválida do servidor' };
         }
         
         const data = await response.json();
         
+        if (!data || typeof data !== 'object') {
+            console.error('Dados inválidos recebidos:', data);
+            return { success: false, error: 'Dados inválidos recebidos' };
+        }
+        
         if (!data.success) {
             console.error('Erro na resposta da API:', data);
+        } else {
+            console.log('Vagas carregadas com sucesso:', data.data?.length || 0, 'vagas');
         }
         
         return data;
