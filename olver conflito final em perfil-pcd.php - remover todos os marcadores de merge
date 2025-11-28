@@ -1,0 +1,40 @@
+[1mdiff --git a/perfil-pcd.php b/perfil-pcd.php[m
+[1mindex 8a5419f..42f67cb 100644[m
+[1m--- a/perfil-pcd.php[m
+[1m+++ b/perfil-pcd.php[m
+[36m@@ -492,7 +492,6 @@[m [mif (!empty($userData['logradouro'])) {[m
+         </div>[m
+     </div>[m
+ [m
+[31m-<<<<<<< HEAD[m
+     <!-- Delete Account Modal -->[m
+     <div id="deleteAccountModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">[m
+         <div class="bg-white rounded-lg max-w-md w-full">[m
+[36m@@ -552,6 +551,13 @@[m [mif (!empty($userData['logradouro'])) {[m
+         </div>[m
+     </div>[m
+ [m
+[32m+[m[32m<?php[m[41m[m
+[32m+[m[32m// Incluir footer escuro (para páginas de perfil)[m[41m[m
+[32m+[m[32m$footerStyle = 'dark';[m[41m[m
+[32m+[m[32minclude 'includes/footer.php';[m[41m[m
+[32m+[m[32m?>[m[41m[m
+[32m+[m[41m[m
+[32m+[m[32m    <script src="assets/js/api.js"></script>[m[41m[m
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>[m
+     <script>[m
+         // Funções para gerenciar habilidades[m
+[36m@@ -1071,6 +1077,13 @@[m [mif (!empty($userData['logradouro'])) {[m
+                 return;[m
+             }[m
+             [m
+[32m+[m[32m            // Verificar se ViggedAPI está disponível[m[41m[m
+[32m+[m[32m            if (!window.ViggedAPI || !window.ViggedAPI.excluirConta) {[m[41m[m
+[32m+[m[32m                console.error('ViggedAPI não está disponível. Verifique se o arquivo api.js foi carregado.');[m[41m[m
+[32m+[m[32m                alert('Erro: API não disponível. Por favor, recarregue a página e tente novamente.');[m[41m[m
+[32m+[m[32m                return;[m[41m[m
+[32m+[m[32m            }[m[41m[m
+[32m+[m[41m            [m
+             const deleteButton = document.getElementById('confirmDeleteButton');[m
+             const originalText = deleteButton.innerHTML;[m
+             deleteButton.disabled = true;[m
